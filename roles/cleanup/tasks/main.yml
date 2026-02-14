@@ -1,0 +1,46 @@
+---
+- name: Cleanup existing Docker and Kubernetes entries in sources.list
+  replace:
+    path: /etc/apt/sources.list
+    regexp: '^(.*(?:download\.docker\.com|apt\.kubernetes\.io).*)$'
+    replace: '# \1'
+  when: ansible_os_family == "Debian"
+
+- name: Remove legacy Docker and Kubernetes GPG keys
+  apt_key:
+    id: "{{ item }}"
+    state: absent
+  loop:
+    - 0EBFCD88 # Docker
+  when: ansible_os_family == "Debian"
+
+- name: Remove legacy Kubernetes GPG key by URL
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: absent
+  when: ansible_os_family == "Debian"
+
+- name: Remove conflicting repository files in sources.list.d
+  file:
+    path: "/etc/apt/sources.list.d/{{ item }}"
+    state: absent
+  loop:
+    - docker.list
+    - download_docker_com_linux_ubuntu.list
+    - kubernetes.list
+  when: ansible_os_family == "Debian"
+
+- name: Check if kubeadm is installed
+  command: which kubeadm
+  register: kubeadm_check
+  ignore_errors: yes
+  changed_when: false
+
+- name: Reset Kubernetes if needed
+  command: kubeadm reset -f
+  when: kubeadm_check.rc == 0
+  ignore_errors: yes
+
+- name: Reboot and wait for reboot
+  reboot:
+  when: kubeadm_check.rc == 0

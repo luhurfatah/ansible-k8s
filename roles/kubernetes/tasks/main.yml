@@ -1,0 +1,14 @@
+---
+- name: Install Kubernetes binaries (Debian/Ubuntu)
+  import_tasks: debian.yml
+  when: ansible_os_family == "Debian"
+
+- name: Install Kubernetes binaries (RHEL/CentOS)
+  import_tasks: redhat.yml
+  when: ansible_os_family == "RedHat"
+
+- name: Enable kubelet
+  service:
+    name: kubelet
+    enabled: yes
+    state: started

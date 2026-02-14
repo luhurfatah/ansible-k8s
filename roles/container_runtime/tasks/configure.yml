@@ -1,0 +1,30 @@
+---
+- name: Create containerd config directory
+  file:
+    path: /etc/containerd
+    state: directory
+
+- name: Generate default containerd config
+  shell: |
+    containerd config default > /etc/containerd/config.toml
+  args:
+    creates: /etc/containerd/config.toml.bak # Use a dummy file so it can be re-run if needed, or just remove creates
+
+- name: Enable CRI plugin in containerd
+  replace:
+    path: /etc/containerd/config.toml
+    regexp: 'disabled_plugins = \["cri"\]'
+    replace: 'disabled_plugins = []'
+
+- name: Configure SystemdCgroup in config.toml
+  replace:
+    path: /etc/containerd/config.toml
+    regexp: 'SystemdCgroup = false'
+    replace: 'SystemdCgroup = true'
+  notify: Restart containerd
+
+- name: Ensure containerd is started and enabled
+  service:
+    name: containerd
+    state: started
+    enabled: yes

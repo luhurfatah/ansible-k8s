@@ -1,0 +1,9 @@
+---
+- name: Disable Swap
+  import_tasks: swap.yml
+
+- name: Configure Kernel Modules and Sysctl
+  import_tasks: kernel.yml
+
+- name: Install Prerequisites
+  import_tasks: prereqs.yml

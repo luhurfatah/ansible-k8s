@@ -1,0 +1,70 @@
+---
+- name: Check if Kubernetes is already initialized
+  stat:
+    path: /etc/kubernetes/admin.conf
+  register: k8s_admin_conf
+
+- name: Initialize Kubernetes Master
+  command: >
+    kubeadm init
+    --pod-network-cidr={{ pod_network_cidr }}
+    --service-cidr={{ service_cidr }}
+    --apiserver-advertise-address={{ api_server_advertise_address }}
+    --control-plane-endpoint={{ control_plane_endpoint }}:6443
+    --upload-certs
+  register: kubeadm_init
+  when: 
+    - not k8s_admin_conf.stat.exists
+    - inventory_hostname == groups['masters'][0]
+
+- name: Get certificate key for master joins
+  command: kubeadm init phase upload-certs --upload-certs
+  register: certificate_key_raw
+  delegate_to: "{{ groups['masters'][0] }}"
+  run_once: true
+
+- name: Get join command
+  command: kubeadm token create --print-join-command
+  register: join_command_raw
+  delegate_to: "{{ groups['masters'][0] }}"
+  run_once: true
+
+- name: Set join facts
+  set_fact:
+    master_join_cmd: "{{ join_command_raw.stdout }} --control-plane --certificate-key {{ certificate_key_raw.stdout_lines[-1] }}"
+    worker_join_cmd: "{{ join_command_raw.stdout }}"
+  run_once: true
+
+- name: Store join commands in dummy host
+  add_host:
+    name: "K8S_TOKEN_HOLDER"
+    master_join: "{{ master_join_cmd }}"
+    worker_join: "{{ worker_join_cmd }}"
+
+- name: Join secondary masters to cluster
+  command: "{{ hostvars['K8S_TOKEN_HOLDER']['master_join'] }} --apiserver-advertise-address={{ api_server_advertise_address }}"
+  when: 
+    - inventory_hostname != groups['masters'][0]
+    - not k8s_admin_conf.stat.exists
+
+- name: Create .kube directory
+  file:
+    path: "$HOME/.kube"
+    state: directory
+    mode: '0755'
+
+- name: Copy admin.conf to user's kube config
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "$HOME/.kube/config"
+    remote_src: yes
+    owner: "{{ ansible_user_uid }}"
+    group: "{{ ansible_user_gid }}"
+
+- name: Install Calico CNI
+  command: kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/calico.yaml
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  when: 
+    - inventory_hostname == groups['masters'][0]
+    - kubeadm_init is changed

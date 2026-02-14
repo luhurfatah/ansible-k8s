@@ -1,0 +1,5 @@
+---
+- name: Install containerd
+  package:
+    name: containerd.io
+    state: present

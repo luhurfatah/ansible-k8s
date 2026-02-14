@@ -1,0 +1,14 @@
+---
+- name: Setup repository for Debian/Ubuntu
+  import_tasks: debian.yml
+  when: ansible_os_family == "Debian"
+
+- name: Setup repository for RHEL/CentOS
+  import_tasks: redhat.yml
+  when: ansible_os_family == "RedHat"
+
+- name: Install Containerd
+  import_tasks: install.yml
+
+- name: Configure Containerd
+  import_tasks: configure.yml

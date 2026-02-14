@@ -1,0 +1,16 @@
+# Kubernetes Version
+k8s_version: "1.28.2-1.1"
+k8s_version_deb: "1.28.2-1.1"
+k8s_version_rpm: "1.28.2"
+
+# Cluster Networking
+pod_network_cidr: "192.168.0.0/16"
+service_cidr: "10.96.0.0/12"
+api_server_advertise_address: "{{ ansible_default_ipv4.address }}"
+control_plane_endpoint: "<your-load-balancer-dns-or-ip>"
+
+# CRI
+containerd_version: "1.6.24"
+
+# Swap
+disable_swap: true
