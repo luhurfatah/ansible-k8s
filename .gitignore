@@ -1,0 +1,19 @@
+# Sensitive files
+admin.conf
+*.pem
+*.key
+
+# Ansible files
+*.retry
+retry
+.ansible/
+cp/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# OS files
+.DS_Store
+
+*.log
