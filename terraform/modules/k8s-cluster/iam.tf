@@ -21,7 +21,6 @@ resource "aws_iam_role" "k8s_node_role" {
   }
 }
 
-# Attach common EC2 permissions
 resource "aws_iam_role_policy_attachment" "node_ec2_policy" {
   role       = aws_iam_role.k8s_node_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"

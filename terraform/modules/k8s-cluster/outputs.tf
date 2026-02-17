@@ -15,7 +15,7 @@ output "k8s_worker_public_ips" {
 }
 
 output "nlb_dns_name" {
-  value = aws_lb.k8s_api_nlb.dns_name
+  value = var.enable_nlb ? aws_lb.k8s_api_nlb[0].dns_name : null
 }
 
 output "private_key_path" {
